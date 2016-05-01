@@ -1,0 +1,202 @@
+###############################################################################
+#   Copyright 2014 Matthew Linton
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+###############################################################################
+
+# Bash configuration for switching between projects within a workspace
+# The following variables can be added top your .bashrc file to change the default behavior
+# WORKSPACE :       Set the default workspace where your projects will be located.
+PROJECTSRC="${HOME}/.projectsrc"
+
+# Grab configuration from .projectsrc
+CFG_ENABLE="$(sed -e '/^ *#/d' -e '/^$/d' "$PROJECTSRC" | grep enable-projects)"
+CFG_DEFAULT_PROJECT="$(sed -e '/^ *#/d' -e '/^$/d' "$PROJECTSRC" | grep default-project | sed -e 's/default-project[ \t]*//g')"
+CFG_CURRENT_PROJECT="$(sed -e '/^ *#/d' -e '/^$/d' "$PROJECTSRC" | grep current-project | sed -e 's/current-project[ \t]*//g')"
+CFG_WORKSPACE="$(sed -e '/^ *#/d' -e '/^$/d' "$PROJECTSRC" | grep default-workspace | sed -e 's/default-workspace[ \t]*//g')"
+
+# Default Workspace
+if [ -z "${WORKSPACE}" ]; then
+    if [ "$CFG_WORKSPACE" != "" ] && [ -d "$CFG_WORKSPACE" ]; then
+        WORKSPACE="$CFG_WORKSPACE"
+    else
+        WORKSPACE="${HOME}"
+    fi
+fi
+WORKSPACE="$(readlink -f "$WORKSPACE")"
+
+# Default project directory. This is the working directory in our workspace
+if [ -z "$PROJECT" ]; then
+    if [ "$CFG_CURRENT_PROJECT" != "" ] && [ -d "$WORKSPACE/$CFG_CURRENT_PROJECT" ]; then
+        PROJECT="$CFG_CURRENT_PROJECT"
+    elif [ "$CFG_DEFAULT_PROJECT" != "" ] && [ -d "$WORKSPACE/$CFG_DEFAULT_PROJECT" ]; then
+        PROJECT="$CFG_DEFAULT_PROJECT"
+    else
+        PROJECT=""
+    fi
+fi
+
+# Define how many CPUs we can use for compiling
+CPU_LOW=1
+CPU_MED=4
+CPU_HIGH=8
+CPU_MAX=8
+
+# Usefull information
+BUILD_MACHINE="$(hostname -s)"
+BUILD_ARCH="$(uname -p)"
+BUILD_OS="$(uname -o)"
+
+# Export shell variables
+if [ "$CFG_ENABLE" != "" ]; then
+    export WORKSPACE
+    export PROJECT
+    export DIR_PROJECT="$WORKSPACE/$PROJECT"
+    export PS1="\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[36m\]\w\n\[\e[33m\]$PROJECT \[\e[0m\]$ "
+fi
+
+# Aliases
+alias phelp='project_help'
+alias helpprj='phelp'
+alias prjhelp='phelp'
+
+alias cdwsp='cd "${WORKSPACE}"'
+alias cdprj='cd "${DIR_PROJECT}"'
+complete -F _function_tabcomplete cdprj
+alias cpprj="project_copy"
+complete -F _function_tabcomplete rpprj
+alias lsprj="echo 'Projects:' && ls -1 '${WORKSPACE}' | sed -e 's/\/$//g' -e 's/^/  /g'"
+alias mkprj="project_make"
+alias mvprj="project_move"
+complete -F _function_tabcomplete mvprj
+alias prjon="project_on"
+alias prjoff="project_off"
+alias rmprj="project_remove"
+complete -F _function_tabcomplete rmprj
+alias delprj="rmprj"
+complete -F _function_tabcomplete delprj
+alias swprj='project_switch'
+complete -F _function_tabcomplete swprj
+alias swwsp='project_switchworkspace'
+
+alias srcgrep='grep -HnI --exclude-dir={\*.svn\*,\*.objs\*,\*tags\*} --exclude="*.o"'
+
+# Functions
+function project_help () {
+    echo ''
+    echo 'Project managenment commands allow you to more easily navigate'
+    echo 'multiple projects in a single workspace.'
+    echo ''
+    echo '- Project Management ------------------------------------------------'
+    echo "  cdwsp                 cd ${WORKSPACE}"
+    echo "  cdprj                 cd ${DIR_PROJECT}"
+    echo '  cpprj <src> <dest>    Copy a project to a new project'
+    echo '  lsprj                 List projects within the workspace directory'
+    echo '  mkprj <project>       Create a new projet'
+    echo '  mvprj <src> <dest>    Rename project and move'
+    echo '  prjon                 Turn Bash Projects on'
+    echo '  prjoff                Disable Bash Projects'
+    echo '  rmprj <project>       Remove (Delete) project'
+    echo '  swprj <project>       Switch project to <project>'
+    echo '  swwsp <workspace>     Switch workspace directory'
+    echo ''
+}
+
+function project_switchworkspace {
+    if [ -z "$1" ]; then
+        echo "Workspace location required" >&2
+    elif [ -d "$1" ]; then
+        export WORKSPACE="$(readlink -f "$1")"
+        sed -i -e "s#default-workspace[ \t]*.*#default-workspace $1#g" "$PROJECTSRC"
+        source "${HOME}/.bash_projects"
+    else
+        echo "Workspace directory does not exist" >&2
+    fi
+}
+
+function project_make {
+    if [ -z "$1" ]; then
+        echo "Project name required" >&2
+    elif [ -d "$1" ]; then
+        echo "Project \"$1\" already exists" >&2
+    else
+        mkdir "$WORKSPACE/$1"
+        swprj "$1"
+    fi
+}
+
+function project_switch {
+    if [ -z "$1" ]; then
+        echo "Project name required" >&2
+    elif [ ! -d "$WORKSPACE/$1" ]; then
+        echo "The directory \"$WORKSPACE/$1\" does not exist" >&2
+    else
+        export PROJECT="$1"
+        sed -i -e "s/current-project[ \t]*.*/current-project $1/g" "$PROJECTSRC"
+        source "${HOME}/.bash_projects"
+        cdprj "$1"
+    fi
+}
+
+function project_move {
+    if [ -z "$1" ]; then
+        echo "You must enter  a source and destination project" >&2
+    elif [ ! -d "$WORKSPACE/$1" ]; then
+        echo "Project \"$1\" does not exist" >&2
+    elif [ -z "$2" ]; then
+        echo "You must enter a destination project" >&2
+    elif [ -d "$2" ]; then
+        echo "Project \"$2\" already exists" >&2
+    else
+        mv "$WORKSPACE/$1" "$WORKSPACE/$2"
+        project_switch "$2"
+    fi
+}
+
+function project_copy {
+    if [ -z "$1" ]; then
+        echo "You must enter  a source and destination project" >&2
+    elif [ ! -d "$WORKSPACE/$1" ]; then
+        echo "Project \"$1\" does not exist" >&2
+    elif [ -z "$2" ]; then
+        echo "You must enter a destination project" >&2
+    elif [ -d "$2" ]; then
+        echo "Project \"$2\" already exists" >&2
+    else
+        cp -a "$WORKSPACE/$1" "$WORKSPACE/$2"
+        project_switch "$2"
+    fi
+}
+
+function project_remove {
+    if [ -z "$1" ]; then
+        echo "You must enter a project" >&2
+    elif [ ! -d "$WORKSPACE/$1" ]; then
+        echo "Project \"$1\" does not exist" >&2
+    else
+        cd "$WORKSPACE"
+        export PROJECT=""
+        rm -rf "$WORKSPACE/$1"
+        source "${HOME}/.bashrc"
+    fi
+}
+
+function project_off {
+    sed -i -e 's/[ \t#]*enable-projects/#enable-projects/g' "$PROJECTSRC"
+    source "${HOME}/.bashrc"
+}
+
+function project_on {
+    sed -i -e 's/[ \t#]*enable-projects/enable-projects/g' "$PROJECTSRC"
+    source "${HOME}/.bashrc"
+}

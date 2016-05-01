@@ -1,0 +1,57 @@
+###############################################################################
+#   Copyright 2014 Matthew Linton
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+###############################################################################
+
+# Edit
+alias vi='vim'
+alias svi='sudo vi'
+alias vis='vim "+set si"'
+alias edit='vim'
+
+# Directory Listing
+alias l='ls -CF'
+alias lf='ls -alF --color=auto'
+alias ls='ls -hF --color=tty'                 # classify files in colour
+alias lh='ls -d .*'                           # list only hidden
+alias ll='ls -l'                              # long list
+alias la='ls -lA'                             # all but . and ..
+alias lx='ls -lXB'                            # Sort by extension.
+alias lk='ls -lSr'                            # Sort by size, biggest last.
+alias lt='ls -ltr'                            # Sort by date, most recent last.
+alias lc='ls -ltcr'                           # Sort by/show change time,most recent last.
+alias lu='ls -ltur'                           # Sort by/show access time,most recent last.
+alias lst='ls -lt'                            #
+alias lsr='ls -lrt'                           # long (1 item/row), time-sorted oldest first
+alias lsh='ls -lh'                            # long, human-readable sizes (K=1024, M, etc.)
+alias lsd='ls -dx */'                         # directories only, by rows
+alias dir='ls --color=auto --format=vertical'
+alias lsdh='ls -dx */ .*/'                    # dirs, by rows, including hidden
+alias tree='tree -Csuh'                       # alt to recursive ls' ...
+alias vdir='ls --color=auto --format=long'    
+
+# Other
+alias rd='rm -rf'
+alias mdp='mkdir -p'
+
+# Grep
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+
+# Date and Time
+alias now='date +%T'
+alias nowtime='now'
+alias nowdate='date +"%d-%m-%Y"'
+alias today="date '+%A %B %d, %Y'"

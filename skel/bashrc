@@ -1,0 +1,46 @@
+###############################################################################
+#   Copyright 2014 Matthew Linton
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+###############################################################################
+
+# If not running interactively, don't do anything
+[[ "$-" != *i* ]] && return
+
+# deafault bash configuration
+export PS1="\[\e]0;\w\a\]\n\[\e[31m\]\u@\h \[\e[36m\]\w\n\[\e[0m\]$ "
+
+# functions
+if [ -f "${HOME}/.bash_functions" ]; then
+    source "${HOME}/.bash_functions"
+fi
+
+# Aliases
+if [ -f "${HOME}/.bash_aliases" ]; then
+    source "${HOME}/.bash_aliases"
+fi
+
+# Load bash_projects
+if [ -f "${HOME}/.bash_projects" ]; then
+    source "${HOME}/.bash_projects"
+fi
+
+# Load bash_notes
+if [ -f "${HOME}/.bash_notes" ]; then
+    source "${HOME}/.bash_notes"
+fi
+
+new lines
+here dont forget to
+remove this
+
